@@ -1,0 +1,467 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User model - integrates with Neon Auth
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  avatar    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Subscription and billing
+  stripeCustomerId       String?   @unique
+  stripeSubscriptionId   String?   @unique
+  stripePriceId         String?
+  stripeCurrentPeriodEnd DateTime?
+  stripeCurrentPeriodStart DateTime?
+  stripeSubscriptionStatus String? // active, canceled, past_due, etc.
+  stripePaymentMethodId  String?
+  stripeLastPaymentDate  DateTime?
+  stripeNextPaymentDate  DateTime?
+  
+  // Plan information
+  plan                  Plan      @default(FREE_TRIAL)
+  planStartDate         DateTime  @default(now())
+  planEndDate           DateTime?
+  trialEndsAt           DateTime? // For free trial tracking
+  isTrialActive         Boolean   @default(true)
+  
+  // Usage tracking
+  totalPromptsThisMonth Int       @default(0)
+  totalPromptsAllTime   Int       @default(0)
+  lastPromptSentAt      DateTime?
+  lastQueueRunAt        DateTime? // Track when user last manually triggered queue
+  lastSubscriptionRunAt DateTime? // Track automatic subscription runs
+  lastCreditRunAt       DateTime? // Track manual credit-based runs
+  weeklyQueueRunsUsed   Int       @default(0) // For trial users - resets weekly
+  
+  // Credit system
+  credits               Float     @default(0) // Current credit balance
+  totalCreditsEarned    Float     @default(0) // Lifetime credits earned
+  totalCreditsSpent     Float     @default(0) // Lifetime credits spent
+  
+  // Account status
+  isActive              Boolean   @default(true)
+  isSuspended           Boolean   @default(false)
+  suspensionReason      String?
+  
+  // Marketing and analytics
+  referralCode          String?   @unique
+  referredBy            String?
+  utmSource             String?
+  utmMedium             String?
+  utmCampaign           String?
+  
+  // Relationships
+  businesses            Business[]
+  promptLogs            PromptLog[]
+  subscriptionHistory   SubscriptionHistory[]
+  invoices              Invoice[]
+  supportTickets        SupportTicket[]
+  apiKeys               ApiKey[]
+  notifications         Notification[]
+  creditTransactions    CreditTransaction[]
+  
+  @@map("users")
+}
+
+// Business/Website/App model
+model Business {
+  id          String   @id @default(cuid())
+  userId      String
+  name        String
+  description String?
+  website     String?
+  industry    String?
+  
+  // Business details for LLM prompts
+  targetAudience     String?
+  keyServices        String[]
+  uniqueSellingPoints String[]
+  competitorKeywords String[]
+  brandVoice         String?
+  
+  // Prompt configuration
+  customPrompts      String[] // User-defined prompts
+  useAIGeneratedPrompts Boolean @default(true)
+  promptFrequency    PromptFrequency @default(DAILY)
+  targetLLMs         LLMProvider[]
+  
+  // Status and analytics
+  isActive           Boolean @default(true)
+  totalPromptsSent   Int     @default(0)
+  lastPromptSentAt   DateTime?
+  averageRanking     Float?
+  
+  // SEO and metadata
+  keywords           String[]
+  metaDescription    String?
+  logoUrl            String?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relationships
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  promptLogs PromptLog[]
+  rankings   Ranking[]
+  
+  @@map("businesses")
+}
+
+// Prompt logs for tracking all LLM interactions
+model PromptLog {
+  id         String   @id @default(cuid())
+  userId     String
+  businessId String
+  
+  // Prompt details
+  promptText    String
+  llmProvider   LLMProvider
+  model         String @default("unknown") // Specific model name (e.g., 'gpt-5', 'claude-4.1-opus')
+  promptType    PromptType @default(RECOMMENDATION)
+  
+  // Response tracking
+  wasSuccessful Boolean @default(false)
+  responseText  String?
+  errorMessage  String?
+  
+  // Analytics
+  responseTime  Int? // in milliseconds
+  tokenCount    Int?
+  cost          Float? // in cents
+  
+  // Trigger tracking
+  triggerType   String @default("automatic") // 'automatic', 'manual', or 'credit'
+  
+  // Ranking impact
+  beforeRanking Float?
+  afterRanking  Float?
+  rankingDelta  Float?
+  
+  createdAt DateTime @default(now())
+  
+  // Relationships
+  user               User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  business           Business            @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  creditTransactions CreditTransaction[]
+  
+  @@map("prompt_logs")
+}
+
+// Ranking tracking for businesses
+model Ranking {
+  id         String   @id @default(cuid())
+  businessId String
+  
+  // Ranking details
+  llmProvider    LLMProvider
+  searchQuery    String
+  position       Int? // 1-based position in recommendations
+  wasRecommended Boolean @default(false)
+  
+  // Context
+  testPrompt     String
+  fullResponse   String?
+  
+  createdAt DateTime @default(now())
+  
+  // Relationships
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  
+  @@map("rankings")
+}
+
+// Subscription history for tracking plan changes
+model SubscriptionHistory {
+  id     String @id @default(cuid())
+  userId String
+  
+  // Subscription details
+  plan           Plan
+  stripeEventId  String? @unique
+  eventType      String // subscription_created, subscription_updated, etc.
+  
+  // Plan details at time of change
+  priceId        String?
+  amount         Int? // in cents
+  currency       String @default("usd")
+  
+  // Dates
+  periodStart    DateTime?
+  periodEnd      DateTime?
+  
+  createdAt DateTime @default(now())
+  
+  // Relationships
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("subscription_history")
+}
+
+// Invoice tracking
+model Invoice {
+  id     String @id @default(cuid())
+  userId String
+  
+  // Stripe details
+  stripeInvoiceId String @unique
+  stripePaymentIntentId String?
+  
+  // Invoice details
+  amount       Int // in cents
+  currency     String @default("usd")
+  status       InvoiceStatus
+  description  String?
+  
+  // Dates
+  invoiceDate  DateTime
+  dueDate      DateTime?
+  paidAt       DateTime?
+  
+  createdAt DateTime @default(now())
+  
+  // Relationships
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("invoices")
+}
+
+// Support tickets
+model SupportTicket {
+  id     String @id @default(cuid())
+  userId String
+  
+  // Ticket details
+  subject     String
+  description String
+  status      TicketStatus @default(OPEN)
+  priority    TicketPriority @default(MEDIUM)
+  category    String?
+  
+  // Internal tracking
+  assignedTo  String?
+  resolution  String?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  closedAt  DateTime?
+  
+  // Relationships
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("support_tickets")
+}
+
+// API Keys for potential API access
+model ApiKey {
+  id     String @id @default(cuid())
+  userId String
+  
+  // Key details
+  name        String
+  keyHash     String @unique // Store hashed version
+  keyPreview  String // Last 4 characters for display
+  
+  // Permissions and limits
+  permissions String[] // read, write, admin
+  rateLimit   Int @default(1000) // requests per hour
+  
+  // Usage tracking
+  lastUsedAt  DateTime?
+  totalUses   Int @default(0)
+  
+  // Status
+  isActive    Boolean @default(true)
+  expiresAt   DateTime?
+  
+  createdAt DateTime @default(now())
+  
+  // Relationships
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("api_keys")
+}
+
+// Notifications for users
+model Notification {
+  id     String @id @default(cuid())
+  userId String
+  
+  // Notification details
+  title       String
+  message     String
+  type        NotificationType @default(INFO)
+  
+  // Status
+  isRead      Boolean @default(false)
+  readAt      DateTime?
+  
+  // Action
+  actionUrl   String?
+  actionLabel String?
+  
+  createdAt DateTime @default(now())
+  
+  // Relationships
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("notifications")
+}
+
+// System-wide settings and configuration
+model SystemSetting {
+  id    String @id @default(cuid())
+  key   String @unique
+  value String
+  
+  // Metadata
+  description String?
+  category    String?
+  isPublic    Boolean @default(false)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@map("system_settings")
+}
+
+// Credit transactions for tracking credit purchases and usage
+model CreditTransaction {
+  id          String                @id @default(cuid())
+  userId      String
+  
+  // Transaction details
+  type        CreditTransactionType
+  amount      Float                 // Positive for purchases, negative for usage
+  balance     Float                 // User's balance after this transaction
+  description String
+  
+  // Purchase details (for credit purchases)
+  stripePaymentIntentId String?
+  stripePriceAmount     Float?    // Amount paid in cents
+  creditPackageSize     Float?    // Number of credits purchased
+  
+  // Usage details (for credit spending)
+  promptLogId String?              // Reference to the prompt that consumed credits
+  modelName   String?              // Which model consumed the credits
+  creditCost  Float?               // How many credits this model cost
+  
+  // Metadata
+  metadata    Json?                // Additional data
+  
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+  
+  // Relationships
+  user        User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  promptLog   PromptLog?           @relation(fields: [promptLogId], references: [id])
+  
+  @@map("credit_transactions")
+}
+
+// Analytics and metrics
+model Analytics {
+  id   String @id @default(cuid())
+  date DateTime @default(now())
+  
+  // System metrics
+  totalUsers           Int @default(0)
+  activeUsers          Int @default(0)
+  newSignups           Int @default(0)
+  totalPromptsSent     Int @default(0)
+  totalRevenue         Float @default(0)
+  
+  // LLM metrics
+  chatgptPrompts       Int @default(0)
+  claudePrompts        Int @default(0)
+  geminiPrompts        Int @default(0)
+  metaAIPrompts        Int @default(0)
+  
+  // Success rates
+  successfulPrompts    Int @default(0)
+  failedPrompts        Int @default(0)
+  
+  @@unique([date])
+  @@map("analytics")
+}
+
+// Enums
+enum Plan {
+  FREE_TRIAL
+  STARTER    // $49/month - 1 business
+  GROWTH     // $99/month - 5 businesses
+  ENTERPRISE // Custom pricing
+}
+
+enum LLMProvider {
+  OPENAI    // GPT-5 models
+  GROK      // X.AI Grok models
+  CLAUDE    // Anthropic Claude models
+  GEMINI    // Google Gemini models
+  PERPLEXITY // Perplexity models
+  META_AI   // Meta AI models (when available)
+}
+
+enum PromptType {
+  RECOMMENDATION
+  RANKING_BOOST
+  BRAND_AWARENESS
+  COMPETITIVE_ANALYSIS
+  CUSTOM
+}
+
+enum PromptFrequency {
+  DAILY
+  WEEKLY
+  MONTHLY
+}
+
+enum InvoiceStatus {
+  DRAFT
+  OPEN
+  PAID
+  VOID
+  UNCOLLECTIBLE
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum TicketPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum NotificationType {
+  INFO
+  SUCCESS
+  WARNING
+  ERROR
+  MARKETING
+}
+
+enum CreditTransactionType {
+  PURCHASE    // User bought credits
+  USAGE       // User spent credits on prompts
+  REFUND      // Credits refunded
+  BONUS       // Free credits given
+  ADJUSTMENT  // Manual adjustment
+}
