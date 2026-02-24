@@ -15,12 +15,15 @@ export interface OpenAIPromptResult {
 export class OpenAIService {
   private client: OpenAI
   
-  // GPT-5 model pricing (estimated based on GPT-4 pricing patterns)
-  // Note: These are placeholder prices - update with actual GPT-5 pricing when available
+  // GPT-5.2 model pricing (February 2026)
+  // Pricing per 1M tokens (in USD)
   private modelPricing = {
-    'gpt-5': { input: 30.00, output: 60.00 }, // Estimated premium pricing
-    'gpt-5-mini': { input: 15.00, output: 30.00 }, // Estimated mid-tier pricing
-    'gpt-5-nano': { input: 5.00, output: 10.00 }, // Estimated budget pricing
+    'gpt-5.2': { input: 1.75, output: 14.00 }, // Flagship model, best for complex reasoning, coding, and agentic tasks
+    'gpt-5.2-pro': { input: 21.00, output: 168.00 }, // Uses more compute for harder thinking
+    'gpt-5.2-codex': { input: 1.75, output: 14.00 }, // Optimized for coding tasks
+    'gpt-5.2-chat-latest': { input: 1.75, output: 14.00 }, // Chat-optimized version
+    'gpt-5-mini': { input: 0.25, output: 2.00 }, // Cost-effective version
+    'gpt-5-nano': { input: 0.05, output: 0.40 }, // High-throughput, smallest model
   }
 
   constructor() {
@@ -35,7 +38,7 @@ export class OpenAIService {
   }
 
   /**
-   * Send a prompt to OpenAI GPT-5 and return the response
+   * Send a prompt to OpenAI GPT-5.2 and return the response
    */
   async sendPrompt(
     business: { name: string; description: string | null; [key: string]: unknown }, // Business object with all fields
@@ -48,9 +51,9 @@ export class OpenAIService {
       // Generate the prompt
       const prompt = this.generatePrompt(business, customPrompt)
       
-      // Use the new GPT-5 responses API based on the provided example
+      // Use the new GPT-5.2 responses API based on the provided example
       const response = await this.client.responses.create({
-        model: model as 'gpt-5' | 'gpt-5-mini' | 'gpt-5-nano',
+        model: model as 'gpt-5.2' | 'gpt-5.2-pro' | 'gpt-5.2-codex' | 'gpt-5.2-chat-latest' | 'gpt-5-mini' | 'gpt-5-nano',
         input: prompt
       })
 
@@ -173,7 +176,7 @@ export class OpenAIService {
   }
 
   /**
-   * Get available OpenAI GPT-5 models
+   * Get available OpenAI GPT-5.2 models
    */
   getAvailableModels(): string[] {
     return Object.keys(this.modelPricing)
@@ -191,22 +194,43 @@ export class OpenAIService {
   }> {
     return [
       {
-        name: 'gpt-5',
-        description: 'The best model for coding and agentic tasks across domains',
-        inputPrice: this.modelPricing['gpt-5'].input,
-        outputPrice: this.modelPricing['gpt-5'].output,
+        name: 'gpt-5.2',
+        description: 'The flagship model, best for complex reasoning, coding, and agentic tasks. 128K context window.',
+        inputPrice: this.modelPricing['gpt-5.2'].input,
+        outputPrice: this.modelPricing['gpt-5.2'].output,
+        recommended: false
+      },
+      {
+        name: 'gpt-5.2-pro',
+        description: 'Uses more compute for harder thinking. Higher pricing for demanding tasks.',
+        inputPrice: this.modelPricing['gpt-5.2-pro'].input,
+        outputPrice: this.modelPricing['gpt-5.2-pro'].output,
+        recommended: false
+      },
+      {
+        name: 'gpt-5.2-codex',
+        description: 'Optimized for coding tasks with same pricing as base gpt-5.2.',
+        inputPrice: this.modelPricing['gpt-5.2-codex'].input,
+        outputPrice: this.modelPricing['gpt-5.2-codex'].output,
+        recommended: false
+      },
+      {
+        name: 'gpt-5.2-chat-latest',
+        description: 'Chat-optimized version with same pricing as base gpt-5.2.',
+        inputPrice: this.modelPricing['gpt-5.2-chat-latest'].input,
+        outputPrice: this.modelPricing['gpt-5.2-chat-latest'].output,
         recommended: false
       },
       {
         name: 'gpt-5-mini',
-        description: 'A faster, cost-efficient version of GPT-5 for well-defined tasks',
+        description: 'Cost-effective version for well-defined tasks. Recommended for most use cases.',
         inputPrice: this.modelPricing['gpt-5-mini'].input,
         outputPrice: this.modelPricing['gpt-5-mini'].output,
         recommended: true // Recommended for most use cases
       },
       {
         name: 'gpt-5-nano',
-        description: 'Fastest, most cost-efficient version of GPT-5',
+        description: 'High-throughput, smallest model. Fastest and most cost-efficient.',
         inputPrice: this.modelPricing['gpt-5-nano'].input,
         outputPrice: this.modelPricing['gpt-5-nano'].output,
         recommended: false
@@ -226,7 +250,7 @@ export class OpenAIService {
       
       const result = await this.sendPrompt(
         testBusiness,
-        'Just say "Hello, this is a test from OpenAI GPT-5" and nothing else.',
+        'Just say "Hello, this is a test from OpenAI GPT-5.2" and nothing else.',
         'gpt-5-nano' // Use cheapest model for testing
       )
       
@@ -246,12 +270,16 @@ export class OpenAIService {
   /**
    * Get recommended model based on use case
    */
-  getRecommendedModel(useCase: 'cost-effective' | 'balanced' | 'premium' = 'balanced'): string {
+  getRecommendedModel(useCase: 'cost-effective' | 'balanced' | 'premium' | 'coding' | 'hard-reasoning' = 'balanced'): string {
     switch (useCase) {
       case 'cost-effective':
         return 'gpt-5-nano'
       case 'premium':
-        return 'gpt-5'
+        return 'gpt-5.2'
+      case 'coding':
+        return 'gpt-5.2-codex'
+      case 'hard-reasoning':
+        return 'gpt-5.2-pro'
       case 'balanced':
       default:
         return 'gpt-5-mini'

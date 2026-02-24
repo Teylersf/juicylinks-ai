@@ -141,6 +141,56 @@ export function DashboardContent({ user }: DashboardContentProps) {
           )}
         </div>
 
+        {/* Quick Actions */}
+        <div className="mb-8">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+              Quick Actions
+            </h2>
+            <div className="flex flex-wrap gap-3">
+              <button
+                onClick={() => window.location.href = '/dashboard/logs'}
+                className="flex items-center px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+              >
+                <Zap className="h-4 w-4 mr-2" />
+                View All Logs
+              </button>
+              {user.businesses.length > 0 && (
+                <button
+                  onClick={() => window.location.href = `/dashboard/businesses/${user.businesses[0].id}/prompts`}
+                  className="flex items-center px-4 py-2 bg-purple-100 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 rounded-md hover:bg-purple-200 dark:hover:bg-purple-900/30 transition-colors"
+                >
+                  <Wand2 className="h-4 w-4 mr-2" />
+                  Custom Prompts
+                </button>
+              )}
+              {businessesRemaining > 0 && hasAccess && (
+                <button
+                  onClick={() => window.location.href = '/dashboard/businesses/add'}
+                  className="flex items-center px-4 py-2 bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded-md hover:bg-blue-200 dark:hover:bg-blue-900/30 transition-colors"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Business
+                </button>
+              )}
+              <button
+                onClick={handleManageSubscription}
+                className="flex items-center px-4 py-2 bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-300 rounded-md hover:bg-green-200 dark:hover:bg-green-900/30 transition-colors"
+              >
+                <Settings className="h-4 w-4 mr-2" />
+                Manage Subscription
+              </button>
+              <button
+                onClick={() => window.location.href = '/dashboard/settings'}
+                className="flex items-center px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+              >
+                <Settings className="h-4 w-4 mr-2" />
+                Account Settings
+              </button>
+            </div>
+          </div>
+        </div>
+
         {/* Stats Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-8">
           <div className="bg-white dark:bg-gray-800 rounded-lg p-3 sm:p-6 shadow-sm">
@@ -288,49 +338,6 @@ export function DashboardContent({ user }: DashboardContentProps) {
         {/* Enhanced Recent Activity - Moved below queue */}
         <div className="mb-8">
           <EnhancedRecentActivity promptLogs={user.promptLogs.slice(0, 20)} />
-        </div>
-
-        {/* Quick Actions */}
-        <div className="mb-8">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-              Quick Actions
-            </h2>
-            <div className="flex flex-wrap gap-3">
-              <button
-                onClick={() => window.location.href = '/dashboard/logs'}
-                className="flex items-center px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-              >
-                <Zap className="h-4 w-4 mr-2" />
-                View All Logs
-              </button>
-              {user.businesses.length > 0 && (
-                <button
-                  onClick={() => window.location.href = `/dashboard/businesses/${user.businesses[0].id}/prompts`}
-                  className="flex items-center px-4 py-2 bg-purple-100 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 rounded-md hover:bg-purple-200 dark:hover:bg-purple-900/30 transition-colors"
-                >
-                  <Wand2 className="h-4 w-4 mr-2" />
-                  Custom Prompts
-                </button>
-              )}
-              {businessesRemaining > 0 && hasAccess && (
-                <button
-                  onClick={() => window.location.href = '/dashboard/businesses/add'}
-                  className="flex items-center px-4 py-2 bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded-md hover:bg-blue-200 dark:hover:bg-blue-900/30 transition-colors"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Business
-                </button>
-              )}
-              <button
-                onClick={handleManageSubscription}
-                className="flex items-center px-4 py-2 bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-300 rounded-md hover:bg-green-200 dark:hover:bg-green-900/30 transition-colors"
-              >
-                <Settings className="h-4 w-4 mr-2" />
-                Manage Subscription
-              </button>
-            </div>
-          </div>
         </div>
 
         {/* Main Content */}

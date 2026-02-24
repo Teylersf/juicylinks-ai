@@ -69,7 +69,6 @@ export function PromptConfiguration({ business }: PromptConfigurationProps) {
     handleSubmit,
     watch,
     setValue,
-    formState: { errors }
   } = useForm<PromptConfigData>({
     resolver: zodResolver(promptConfigSchema),
     defaultValues: {

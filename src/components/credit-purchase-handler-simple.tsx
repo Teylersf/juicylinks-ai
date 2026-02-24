@@ -9,11 +9,10 @@ export function CreditPurchaseHandler() {
 
   useEffect(() => {
     const creditsPurchased = searchParams.get('credits_purchased')
-    const packageId = searchParams.get('package')
     const sessionId = searchParams.get('session_id')
 
     // Only process if we have the right parameters
-    if (creditsPurchased === 'true' && packageId) {
+    if (creditsPurchased === 'true' && sessionId) {
       // Immediately clean up URL to prevent refresh loop
       const url = new URL(window.location.href)
       url.searchParams.delete('credits_purchased')
@@ -22,11 +21,11 @@ export function CreditPurchaseHandler() {
       router.replace(url.pathname + url.search)
 
       // Process the credit purchase
-      processCreditPurchase(sessionId, packageId)
+      processCreditPurchase(sessionId)
     }
-  }, []) // Empty dependency array - only run once on mount
+  }, [searchParams, router]) // Run when searchParams or router change
 
-  const processCreditPurchase = async (sessionId: string | null, packageId: string) => {
+  const processCreditPurchase = async (sessionId: string | null) => {
     try {
       // Get session ID from URL or localStorage
       let actualSessionId = sessionId

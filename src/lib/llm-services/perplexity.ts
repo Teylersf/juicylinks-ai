@@ -12,6 +12,7 @@ export interface PerplexityRequest {
   temperature?: number
   max_tokens?: number
   stream?: boolean
+  search_context_mode?: 'low' | 'medium' | 'high'
 }
 
 export interface PerplexityResponse {
@@ -49,11 +50,37 @@ export class PerplexityService {
   private apiKey: string
   private baseUrl = 'https://api.perplexity.ai'
   
-  // Perplexity Sonar model pricing (estimated based on similar models)
-  // Note: Update with actual pricing when available from Perplexity
+  // Perplexity Sonar model pricing (February 2026)
+  // Prices are per 1M tokens for input/output, per 1K requests for request fees
   private modelPricing = {
-    'sonar': { input: 1.00, output: 3.00 }, // Lightweight, cost-effective
-    'sonar-pro': { input: 5.00, output: 15.00 }, // Advanced search with grounding
+    'sonar-deep-research': { 
+      input: 2.00, 
+      output: 8.00, 
+      searchCost: 5.00, // per 1K searches
+      citationTokens: 2.00, // per 1M citation tokens
+      reasoningTokens: 3.00, // per 1M reasoning tokens
+      contextWindow: 128000
+    },
+    'sonar-reasoning-pro': { 
+      input: 2.00, 
+      output: 8.00, 
+      requestFees: { low: 6.00, medium: 10.00, high: 14.00 } // per 1K requests
+    },
+    'sonar-reasoning': { 
+      input: 1.00, 
+      output: 5.00, 
+      requestFees: { low: 5.00, medium: 8.00, high: 12.00 } // per 1K requests
+    },
+    'sonar-pro': { 
+      input: 3.00, 
+      output: 15.00, 
+      requestFees: { low: 6.00, medium: 10.00, high: 14.00 } // per 1K requests
+    },
+    'sonar': { 
+      input: 1.00, 
+      output: 1.00, 
+      requestFees: { low: 5.00, medium: 8.00, high: 12.00 } // per 1K requests
+    },
   }
 
   constructor() {
@@ -69,7 +96,8 @@ export class PerplexityService {
   async sendPrompt(
     business: { name: string; description: string | null; [key: string]: unknown },
     customPrompt?: string,
-    model: string = 'sonar'
+    model: string = 'sonar',
+    searchContextMode: 'low' | 'medium' | 'high' = 'medium'
   ): Promise<PerplexityPromptResult> {
     const startTime = Date.now()
 
@@ -91,7 +119,8 @@ export class PerplexityService {
         ],
         temperature: 0.7,
         max_tokens: 1000,
-        stream: false
+        stream: false,
+        search_context_mode: searchContextMode
       }
 
       const response = await fetch(`${this.baseUrl}/chat/completions`, {
@@ -233,6 +262,33 @@ export class PerplexityService {
   }
 
   /**
+   * Get search context modes with descriptions
+   */
+  getSearchContextModes(): Array<{
+    mode: 'low' | 'medium' | 'high'
+    description: string
+    characteristics: string
+  }> {
+    return [
+      {
+        mode: 'low',
+        description: 'Basic search context',
+        characteristics: 'Fastest response time, cheapest option, minimal search depth'
+      },
+      {
+        mode: 'medium',
+        description: 'Balanced search context',
+        characteristics: 'Good balance between speed, cost, and search depth'
+      },
+      {
+        mode: 'high',
+        description: 'Maximum search context',
+        characteristics: 'Maximum depth and context, best for complex research queries'
+      }
+    ]
+  }
+
+  /**
    * Get model information including pricing and capabilities
    */
   getModelInfo(): Array<{
@@ -242,34 +298,91 @@ export class PerplexityService {
     outputPrice: number
     recommended: boolean
     capabilities: string[]
+    contextWindow?: number
+    requestFees?: { low: number; medium: number; high: number }
   }> {
     return [
       {
+        name: 'sonar-deep-research',
+        description: 'Deep research model for comprehensive analysis and in-depth research tasks',
+        inputPrice: this.modelPricing['sonar-deep-research'].input,
+        outputPrice: this.modelPricing['sonar-deep-research'].output,
+        recommended: false,
+        capabilities: [
+          'Deep research capabilities',
+          'Comprehensive analysis',
+          'In-depth information synthesis',
+          'Academic and professional research',
+          'Multi-source integration',
+          'Search cost: $5 per 1K searches',
+          'Citation tokens: $2 per 1M',
+          'Reasoning tokens: $3 per 1M'
+        ],
+        contextWindow: 128000
+      },
+      {
+        name: 'sonar-reasoning-pro',
+        description: 'Advanced reasoning model with complex query handling and follow-ups',
+        inputPrice: this.modelPricing['sonar-reasoning-pro'].input,
+        outputPrice: this.modelPricing['sonar-reasoning-pro'].output,
+        recommended: false,
+        capabilities: [
+          'Advanced reasoning capabilities',
+          'Complex logical analysis',
+          'Multi-step problem solving',
+          'Sophisticated query handling',
+          'Professional-grade reasoning',
+          'Request fees: $6/$10/$14 per 1K (low/medium/high context)'
+        ],
+        requestFees: this.modelPricing['sonar-reasoning-pro'].requestFees
+      },
+      {
+        name: 'sonar-reasoning',
+        description: 'Standard reasoning model for balanced reasoning and search',
+        inputPrice: this.modelPricing['sonar-reasoning'].input,
+        outputPrice: this.modelPricing['sonar-reasoning'].output,
+        recommended: false,
+        capabilities: [
+          'Standard reasoning capabilities',
+          'Logical analysis',
+          'Problem solving',
+          'Balanced performance',
+          'Good for most reasoning tasks',
+          'Request fees: $5/$8/$12 per 1K (low/medium/high context)'
+        ],
+        requestFees: this.modelPricing['sonar-reasoning'].requestFees
+      },
+      {
+        name: 'sonar-pro',
+        description: 'Professional model with advanced search and comprehensive responses',
+        inputPrice: this.modelPricing['sonar-pro'].input,
+        outputPrice: this.modelPricing['sonar-pro'].output,
+        recommended: false,
+        capabilities: [
+          'Advanced search capabilities',
+          'Comprehensive responses',
+          'Professional-grade output',
+          'Multi-source grounding',
+          'Complex query handling',
+          'Request fees: $6/$10/$14 per 1K (low/medium/high context)'
+        ],
+        requestFees: this.modelPricing['sonar-pro'].requestFees
+      },
+      {
         name: 'sonar',
-        description: 'Lightweight, cost-effective search model with grounding',
+        description: 'Lightweight, cost-effective model for fast, efficient searches',
         inputPrice: this.modelPricing['sonar'].input,
         outputPrice: this.modelPricing['sonar'].output,
         recommended: true, // Recommended for most use cases
         capabilities: [
           'Real-time web search',
           'Fast responses',
-          'Cost-effective',
-          'Current information retrieval'
-        ]
-      },
-      {
-        name: 'sonar-pro',
-        description: 'Advanced search offering with grounding, supporting complex queries and follow-ups',
-        inputPrice: this.modelPricing['sonar-pro'].input,
-        outputPrice: this.modelPricing['sonar-pro'].output,
-        recommended: false,
-        capabilities: [
-          'Advanced search capabilities',
-          'Complex query handling',
-          'Follow-up questions',
-          'Comprehensive research',
-          'Multi-source grounding'
-        ]
+          'Most cost-effective',
+          'Current information retrieval',
+          'Ideal for high-volume applications',
+          'Request fees: $5/$8/$12 per 1K (low/medium/high context)'
+        ],
+        requestFees: this.modelPricing['sonar'].requestFees
       }
     ]
   }
@@ -306,8 +419,12 @@ export class PerplexityService {
   /**
    * Get recommended model based on use case
    */
-  getRecommendedModel(useCase: 'cost-effective' | 'advanced' = 'cost-effective'): string {
+  getRecommendedModel(useCase: 'cost-effective' | 'advanced' | 'reasoning' | 'deep-research' = 'cost-effective'): string {
     switch (useCase) {
+      case 'deep-research':
+        return 'sonar-deep-research'
+      case 'reasoning':
+        return 'sonar-reasoning-pro'
       case 'advanced':
         return 'sonar-pro'
       case 'cost-effective':
@@ -322,5 +439,19 @@ export class PerplexityService {
   supportsRealTimeSearch(model: string): boolean {
     // All Sonar models support real-time search
     return this.getAvailableModels().includes(model)
+  }
+
+  /**
+   * Check if a model supports reasoning capabilities
+   */
+  supportsReasoning(model: string): boolean {
+    return model === 'sonar-reasoning' || model === 'sonar-reasoning-pro' || model === 'sonar-deep-research'
+  }
+
+  /**
+   * Check if a model supports deep research capabilities
+   */
+  supportsDeepResearch(model: string): boolean {
+    return model === 'sonar-deep-research'
   }
 }

@@ -222,9 +222,15 @@ export function OnboardingWizard() {
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                 placeholder="Describe what your business does, your main products/services, and what makes you unique..."
               />
-              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                This will help us create better AI prompts for your business
-              </p>
+              <div className="flex items-center justify-between mt-1">
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  This will help us create better AI prompts for your business
+                </p>
+                <p className={`text-xs ${(watchedValues.description?.length || 0) > 500 ? 'text-red-600 dark:text-red-400 font-semibold' : 'text-gray-500 dark:text-gray-400'}`}>
+                  {watchedValues.description?.length || 0}/500
+                  {(watchedValues.description?.length || 0) > 500 && ` (${(watchedValues.description?.length || 0) - 500} over)`}
+                </p>
+              </div>
               {errors.description && (
                 <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.description.message}</p>
               )}
@@ -255,6 +261,10 @@ export function OnboardingWizard() {
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                 placeholder="Describe your ideal customers, their demographics, needs, and pain points..."
               />
+              <p className={`mt-1 text-xs text-right ${(watchedValues.targetAudience?.length || 0) > 300 ? 'text-red-600 dark:text-red-400 font-semibold' : 'text-gray-500 dark:text-gray-400'}`}>
+                {watchedValues.targetAudience?.length || 0}/300
+                {(watchedValues.targetAudience?.length || 0) > 300 && ` (${(watchedValues.targetAudience?.length || 0) - 300} over)`}
+              </p>
               {errors.targetAudience && (
                 <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.targetAudience.message}</p>
               )}
@@ -270,9 +280,15 @@ export function OnboardingWizard() {
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                 placeholder="List your main services or products (separate with commas)..."
               />
-              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                Separate multiple services with commas
-              </p>
+              <div className="flex items-center justify-between mt-1">
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Separate multiple services with commas
+                </p>
+                <p className={`text-xs ${(watchedValues.keyServices?.length || 0) > 500 ? 'text-red-600 dark:text-red-400 font-semibold' : 'text-gray-500 dark:text-gray-400'}`}>
+                  {watchedValues.keyServices?.length || 0}/500
+                  {(watchedValues.keyServices?.length || 0) > 500 && ` (${(watchedValues.keyServices?.length || 0) - 500} over)`}
+                </p>
+              </div>
               {errors.keyServices && (
                 <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.keyServices.message}</p>
               )}
@@ -288,9 +304,15 @@ export function OnboardingWizard() {
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                 placeholder="List your competitive advantages and unique selling points (separate with commas)..."
               />
-              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                Separate multiple points with commas
-              </p>
+              <div className="flex items-center justify-between mt-1">
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Separate multiple points with commas
+                </p>
+                <p className={`text-xs ${(watchedValues.uniqueSellingPoints?.length || 0) > 500 ? 'text-red-600 dark:text-red-400 font-semibold' : 'text-gray-500 dark:text-gray-400'}`}>
+                  {watchedValues.uniqueSellingPoints?.length || 0}/500
+                  {(watchedValues.uniqueSellingPoints?.length || 0) > 500 && ` (${(watchedValues.uniqueSellingPoints?.length || 0) - 500} over)`}
+                </p>
+              </div>
               {errors.uniqueSellingPoints && (
                 <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.uniqueSellingPoints.message}</p>
               )}
@@ -307,6 +329,13 @@ export function OnboardingWizard() {
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                   placeholder="competitor1, competitor2..."
                 />
+                <p className={`mt-1 text-xs text-right ${(watchedValues.competitorKeywords?.length || 0) > 300 ? 'text-red-600 dark:text-red-400 font-semibold' : 'text-gray-500 dark:text-gray-400'}`}>
+                  {watchedValues.competitorKeywords?.length || 0}/300
+                  {(watchedValues.competitorKeywords?.length || 0) > 300 && ` (${(watchedValues.competitorKeywords?.length || 0) - 300} over)`}
+                </p>
+                {errors.competitorKeywords && (
+                  <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.competitorKeywords.message}</p>
+                )}
               </div>
 
               <div>
@@ -319,6 +348,13 @@ export function OnboardingWizard() {
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                   placeholder="professional, friendly, innovative..."
                 />
+                <p className={`mt-1 text-xs text-right ${(watchedValues.brandVoice?.length || 0) > 200 ? 'text-red-600 dark:text-red-400 font-semibold' : 'text-gray-500 dark:text-gray-400'}`}>
+                  {watchedValues.brandVoice?.length || 0}/200
+                  {(watchedValues.brandVoice?.length || 0) > 200 && ` (${(watchedValues.brandVoice?.length || 0) - 200} over)`}
+                </p>
+                {errors.brandVoice && (
+                  <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.brandVoice.message}</p>
+                )}
               </div>
             </div>
           </div>

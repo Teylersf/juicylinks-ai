@@ -683,8 +683,11 @@ export class PromptQueueManager {
 
   /**
    * Get queue status for a specific user
+   * Note: userId parameter is kept for API consistency but currently not used
+   * as the queue manager handles all users globally
    */
-  getQueueStatusForUser(_userId: string): QueueStatus {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  getQueueStatusForUser(userId: string): QueueStatus {
     const processingItem = this.currentQueue.find(item => item.status === 'processing')
     
     return {

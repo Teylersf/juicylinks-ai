@@ -43,16 +43,92 @@ export interface GrokPromptResult {
   cost?: number
 }
 
+export interface GrokModelInfo {
+  name: string
+  inputPrice: number // per 1M tokens
+  outputPrice: number // per 1M tokens
+  contextWindow: number // in tokens
+  maxOutputTokens: number
+  multimodal: boolean
+  nativeToolUse: boolean
+  realTimeSearch: boolean
+  reasoningModel: boolean
+  description: string
+  knowledgeCutoff: string
+  // Parameters NOT supported by Grok 4 models
+  unsupportedParameters: string[]
+}
+
 export class GrokService {
   private apiKey: string
   private baseUrl = 'https://api.x.ai/v1'
   
-  // Grok model pricing (per million tokens) - based on X.AI pricing
+  // Grok model pricing (per million tokens) - Updated February 2026
   private modelPricing = {
-    'grok-code-fast-1': { input: 0.20, output: 1.50 },
-    'grok-4-0709': { input: 3.00, output: 15.00 },
-    'grok-4-fast-reasoning': { input: 0.20, output: 0.50 },
-    'grok-4-fast-non-reasoning': { input: 0.20, output: 0.50 },
+    'grok-4': { input: 3.00, output: 15.00 },
+    'grok-4-heavy': { input: 3.00, output: 15.00 },
+    'grok-3': { input: 3.00, output: 15.00 },
+    'grok-3-mini': { input: 0.30, output: 0.50 },
+  }
+
+  // Detailed model information - Updated February 2026
+  private modelInfo: Record<string, GrokModelInfo> = {
+    'grok-4': {
+      name: 'grok-4',
+      inputPrice: 3.00,
+      outputPrice: 15.00,
+      contextWindow: 256000, // 256K for API
+      maxOutputTokens: 128000,
+      multimodal: true,
+      nativeToolUse: true,
+      realTimeSearch: true,
+      reasoningModel: true,
+      description: "xAI's most intelligent model released July 2025. Supports multimodal (text, image, video), native tool use, and real-time search.",
+      knowledgeCutoff: 'June 2025',
+      unsupportedParameters: ['presencePenalty', 'frequencyPenalty', 'stop']
+    },
+    'grok-4-heavy': {
+      name: 'grok-4-heavy',
+      inputPrice: 3.00,
+      outputPrice: 15.00,
+      contextWindow: 256000, // 256K for API
+      maxOutputTokens: 128000,
+      multimodal: true,
+      nativeToolUse: true,
+      realTimeSearch: true,
+      reasoningModel: true,
+      description: 'Parallel test-time compute version of Grok 4 for maximum performance.',
+      knowledgeCutoff: 'June 2025',
+      unsupportedParameters: ['presencePenalty', 'frequencyPenalty', 'stop']
+    },
+    'grok-3': {
+      name: 'grok-3',
+      inputPrice: 3.00,
+      outputPrice: 15.00,
+      contextWindow: 256000,
+      maxOutputTokens: 128000,
+      multimodal: true,
+      nativeToolUse: true,
+      realTimeSearch: true,
+      reasoningModel: true,
+      description: 'Previous generation model. Still capable with good performance.',
+      knowledgeCutoff: 'June 2025',
+      unsupportedParameters: ['presencePenalty', 'frequencyPenalty', 'stop']
+    },
+    'grok-3-mini': {
+      name: 'grok-3-mini',
+      inputPrice: 0.30,
+      outputPrice: 0.50,
+      contextWindow: 256000,
+      maxOutputTokens: 128000,
+      multimodal: false,
+      nativeToolUse: false,
+      realTimeSearch: false,
+      reasoningModel: false,
+      description: 'Lightweight version for cost-effective tasks.',
+      knowledgeCutoff: 'June 2025',
+      unsupportedParameters: []
+    }
   }
 
   constructor() {
@@ -68,7 +144,7 @@ export class GrokService {
   async sendPrompt(
     business: { name: string; description: string | null; [key: string]: unknown }, // Business object with all fields
     customPrompt?: string,
-    model: string = 'grok-4-0709'
+    model: string = 'grok-4'
   ): Promise<GrokPromptResult> {
     const startTime = Date.now()
 
@@ -204,6 +280,20 @@ export class GrokService {
    */
   getAvailableModels(): string[] {
     return Object.keys(this.modelPricing)
+  }
+
+  /**
+   * Get detailed information about a specific model
+   */
+  getModelInfo(model: string): GrokModelInfo | null {
+    return this.modelInfo[model] || null
+  }
+
+  /**
+   * Get all available models with their detailed information
+   */
+  getAllModelInfo(): Record<string, GrokModelInfo> {
+    return this.modelInfo
   }
 
   /**

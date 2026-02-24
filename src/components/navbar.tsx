@@ -3,7 +3,7 @@
 import * as React from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Menu, X, Zap, User } from "lucide-react"
+import { Menu, X, Zap, User, Settings } from "lucide-react"
 import { ThemeToggle } from "./theme-toggle"
 import { useUser } from "@stackframe/stack"
 
@@ -70,10 +70,14 @@ export function Navbar() {
                 >
                   Dashboard
                 </Link>
-                <div className="flex items-center space-x-2">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 text-white text-sm font-medium">
+                <div className="flex items-center space-x-3">
+                  <Link
+                    href="/dashboard/settings"
+                    className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-all hover:ring-2 hover:ring-blue-300 dark:hover:ring-blue-500"
+                    title="Account Settings"
+                  >
                     {user.displayName?.charAt(0) || user.primaryEmail?.charAt(0) || <User className="h-4 w-4" />}
-                  </div>
+                  </Link>
                   <button
                     onClick={() => user.signOut()}
                     className="text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
@@ -138,9 +142,28 @@ export function Navbar() {
               </Link>
             ))}
             <div className="pt-4 pb-3 border-t border-gray-200 dark:border-gray-800">
-              <div className="flex items-center px-3 space-x-3">
-                {user ? (
-                  <>
+{user ? (
+                <>
+                  <div className="flex items-center px-3 mb-3">
+                    <Link
+                      href="/dashboard/settings"
+                      className="flex items-center space-x-3"
+                      onClick={closeMenu}
+                    >
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-white text-sm font-medium">
+                        {user.displayName?.charAt(0) || user.primaryEmail?.charAt(0) || <User className="h-5 w-5" />}
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-900 dark:text-white">
+                          {user.displayName || 'User'}
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          View profile
+                        </p>
+                      </div>
+                    </Link>
+                  </div>
+                  <div className="space-y-1">
                     <Link
                       href="/dashboard"
                       className="block px-3 py-2 rounded-md text-base font-medium text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
@@ -148,35 +171,43 @@ export function Navbar() {
                     >
                       Dashboard
                     </Link>
+                    <Link
+                      href="/dashboard/settings"
+                      className="flex items-center px-3 py-2 rounded-md text-base font-medium text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                      onClick={closeMenu}
+                    >
+                      <Settings className="h-4 w-4 mr-2" />
+                      Settings
+                    </Link>
                     <button
                       onClick={() => {
                         user.signOut()
                         closeMenu()
                       }}
-                      className="block px-3 py-2 rounded-md text-base font-medium text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                      className="w-full text-left block px-3 py-2 rounded-md text-base font-medium text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                     >
                       Sign Out
                     </button>
-                  </>
-                ) : (
-                  <>
-                    <Link
-                      href="/handler/sign-in"
-                      className="block px-3 py-2 rounded-md text-base font-medium text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                      onClick={closeMenu}
-                    >
-                      Sign In
-                    </Link>
-                    <Link
-                      href="/handler/sign-up"
-                      className="block px-3 py-2 rounded-md text-base font-medium bg-blue-600 text-white hover:bg-blue-700 transition-colors"
-                      onClick={closeMenu}
-                    >
-                      Get Started
-                    </Link>
-                  </>
-                )}
-              </div>
+                  </div>
+                </>
+              ) : (
+                <div className="space-y-1">
+                  <Link
+                    href="/handler/sign-in"
+                    className="block px-3 py-2 rounded-md text-base font-medium text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                    onClick={closeMenu}
+                  >
+                    Sign In
+                  </Link>
+                  <Link
+                    href="/handler/sign-up"
+                    className="block px-3 py-2 rounded-md text-base font-medium bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+                    onClick={closeMenu}
+                  >
+                    Get Started
+                  </Link>
+                </div>
+              )}
             </div>
           </div>
         </div>

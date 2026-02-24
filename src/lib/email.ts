@@ -184,8 +184,7 @@ The Juicy Links Team
 export async function sendLowCreditWarning(
   userEmail: string,
   userName: string | undefined,
-  currentCredits: number,
-  threshold: number = 10
+  currentCredits: number
 ) {
   const subject = `⚠️ Low Credits Alert - Only ${currentCredits} Credits Remaining`
   

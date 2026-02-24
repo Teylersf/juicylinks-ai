@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { ExternalLink, Home, CreditCard, Phone, BookOpen, Users, BarChart3 } from 'lucide-react'
+import { ExternalLink, Home, BookOpen, Users, BarChart3 } from 'lucide-react'
 
 export const metadata: Metadata = {
   title: 'Sitemap - Juicy Links',

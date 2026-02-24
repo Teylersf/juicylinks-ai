@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { PromptQueueManager } from '@/lib/queue/prompt-queue'
 
+// Increase function timeout for long-running queue processing
+export const maxDuration = 300 // 5 minutes (Vercel Pro allows up to 5 minutes)
+
 export async function GET(request: NextRequest) {
   // Verify this is a Vercel cron request
   const authHeader = request.headers.get('authorization')
@@ -39,12 +42,10 @@ export async function GET(request: NextRequest) {
     
     const newQueueLength = queueManager.getCurrentQueue().length
     if (newQueueLength > 0) {
-      // Start processing in the background
-      queueManager.processQueue().catch(error => {
-        console.error('Background queue processing error:', error)
-      })
-      
-      console.log(`4-hour check: Added ${newQueueLength} new prompts to queue`)
+      // Process the queue and AWAIT completion so logs are created before function terminates
+      console.log(`4-hour check: Added ${newQueueLength} new prompts to queue, starting processing...`)
+      await queueManager.processQueue()
+      console.log('4-hour check: Processing completed')
     } else {
       console.log('4-hour check: No new prompts to process')
     }

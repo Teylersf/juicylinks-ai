@@ -49,8 +49,7 @@ export async function POST(request: NextRequest) {
         result = await sendLowCreditWarning(
           data.userEmail,
           data.userName,
-          data.currentCredits,
-          data.threshold
+          data.currentCredits
         )
         break
         

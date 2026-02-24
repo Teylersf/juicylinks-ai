@@ -7,7 +7,7 @@ import { getModelStats } from "@/lib/utils/model-stats"
 // Get live model data
 const modelStats = getModelStats()
 
-const aiPlatforms = modelStats.modelsByProvider.map(({ provider, count, models }) => {
+const aiPlatforms = modelStats.modelsByProvider.map(({ provider, models }) => {
   const platformConfigs: Record<string, {
     name: string
     description: string

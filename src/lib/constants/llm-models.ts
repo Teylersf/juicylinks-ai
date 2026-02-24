@@ -14,30 +14,32 @@ export interface LLMProviderModels {
 
 // Define all models for each LLM provider
 export const LLM_MODELS: LLMProviderModels = {
-  GROK: [
-    { name: 'grok-code-fast-1', description: 'Optimized for coding tasks', recommended: true },
-    { name: 'grok-4-0709', description: 'Advanced reasoning model', recommended: true },
-    { name: 'grok-4-fast-reasoning', description: 'Fast reasoning with high performance', recommended: false },
-    { name: 'grok-4-fast-non-reasoning', description: 'Fast non-reasoning responses', recommended: false }
-  ],
   OPENAI: [
-    { name: 'gpt-5', description: 'Most advanced GPT model with superior reasoning', recommended: true },
-    { name: 'gpt-5-mini', description: 'Faster, cost-effective GPT-5 variant', recommended: true },
-    { name: 'gpt-5-nano', description: 'Ultra-fast GPT-5 for quick responses', recommended: false }
+    { name: 'gpt-5.2', description: 'Most advanced flagship for complex tasks', recommended: true },
+    { name: 'gpt-5.2-pro', description: 'Maximum compute for hardest problems', recommended: true },
+    { name: 'gpt-5.2-codex', description: 'Optimized for coding', recommended: true },
+    { name: 'gpt-5-mini', description: 'Cost-effective', recommended: true },
+    { name: 'gpt-5-nano', description: 'High throughput', recommended: false }
   ],
   CLAUDE: [
-    { name: 'claude-opus-4-1-20250805', description: 'Claude Opus 4.1 - Most advanced model', recommended: true },
-    { name: 'claude-opus-4-20250514', description: 'Claude Opus 4 - High performance model', recommended: true },
-    { name: 'claude-sonnet-4-20250514', description: 'Claude Sonnet 4 - Balanced performance and speed', recommended: true }
+    { name: 'claude-opus-4-6-20260205', description: 'Latest flagship with 1M context', recommended: true },
+    { name: 'claude-sonnet-4-6-20260217', description: 'Best balance performance/cost', recommended: true }
   ],
   GEMINI: [
-    { name: 'gemini-2.5-pro', description: 'Enhanced thinking and reasoning, multimodal understanding, advanced coding', recommended: true },
-    { name: 'gemini-2.5-flash', description: 'Adaptive thinking, cost efficiency', recommended: true },
-    { name: 'gemini-2.5-flash-lite', description: 'Most cost-efficient model supporting high throughput', recommended: true }
+    { name: 'gemini-3.1-pro-preview', description: 'Latest with enhanced reasoning', recommended: true },
+    { name: 'gemini-3-pro-preview', description: 'Standard Pro', recommended: true },
+    { name: 'gemini-3-flash-preview', description: 'Fast and cost-effective', recommended: true }
+  ],
+  GROK: [
+    { name: 'grok-4', description: 'Most intelligent xAI model (July 2025)', recommended: true },
+    { name: 'grok-4-heavy', description: 'Maximum performance', recommended: true },
+    { name: 'grok-3-mini', description: 'Lightweight', recommended: false }
   ],
   PERPLEXITY: [
-    { name: 'sonar', description: 'Real-time web search with grounding', recommended: true },
-    { name: 'sonar-pro', description: 'Advanced search for complex queries', recommended: false }
+    { name: 'sonar-deep-research', description: 'Deep multi-step research', recommended: true },
+    { name: 'sonar-reasoning-pro', description: 'Advanced reasoning', recommended: true },
+    { name: 'sonar-pro', description: 'Professional', recommended: true },
+    { name: 'sonar', description: 'Lightweight', recommended: false }
   ]
 } as const
 

@@ -12,23 +12,34 @@ export interface ClaudePromptResult {
   model?: string
 }
 
+interface ClaudeModelPricing {
+  input: number
+  output: number
+  inputLongContext?: number
+  outputLongContext?: number
+}
+
 export class ClaudeService {
   private client: Anthropic
   
-  // Claude 4 model pricing (based on official Anthropic pricing)
+  // Claude 4.6 model pricing (based on official Anthropic pricing)
   // Reference: https://docs.claude.com/en/docs/about-claude/models/overview
-  private modelPricing = {
-    // Claude Opus 4.1 - Most capable and intelligent model
-    'claude-opus-4-1-20250805': { input: 15.00, output: 75.00 },
+  private modelPricing: Record<string, ClaudeModelPricing> = {
+    // Claude Opus 4.6 - Latest flagship model (Feb 5, 2026)
+    'claude-opus-4-6-20260205': { 
+      input: 5.00, 
+      output: 25.00,
+      inputLongContext: 10.00,
+      outputLongContext: 37.50
+    },
     
-    // Claude Opus 4 - Previous flagship model
-    'claude-opus-4-20250514': { input: 15.00, output: 75.00 },
-    
-    // Claude Sonnet 4 - High-performance model
-    'claude-sonnet-4-20250514': { input: 3.00, output: 15.00 },
-    
-    // Claude Sonnet 3.7 - High-performance with extended thinking
-    'claude-3-7-sonnet-20250219': { input: 3.00, output: 15.00 },
+    // Claude Sonnet 4.6 - Latest Sonnet model (Feb 17, 2026)
+    'claude-sonnet-4-6-20260217': { 
+      input: 3.00, 
+      output: 15.00,
+      inputLongContext: 6.00,
+      outputLongContext: 22.50
+    },
     
     // Claude Haiku 3.5 - Fast and efficient
     'claude-3-5-haiku-20241022': { input: 0.80, output: 4.00 },
@@ -54,7 +65,7 @@ export class ClaudeService {
   async sendPrompt(
     business: { name: string; description: string | null; [key: string]: unknown },
     customPrompt?: string,
-    model: string = 'claude-sonnet-4-20250514'
+    model: string = 'claude-sonnet-4-6-20260217'
   ): Promise<ClaudePromptResult> {
     const startTime = Date.now()
 
@@ -201,8 +212,18 @@ export class ClaudeService {
     const pricing = this.modelPricing[model as keyof typeof this.modelPricing]
     if (!pricing) return 0
 
-    const inputCost = (promptTokens / 1000000) * pricing.input
-    const outputCost = (completionTokens / 1000000) * pricing.output
+    // Check if this model has long context pricing (>200K tokens)
+    const isLongContext = promptTokens > 200000
+    const pricingWithLongContext = pricing as { input: number; output: number; inputLongContext?: number; outputLongContext?: number }
+    const inputPrice = isLongContext && pricingWithLongContext.inputLongContext 
+      ? pricingWithLongContext.inputLongContext 
+      : pricing.input
+    const outputPrice = isLongContext && pricingWithLongContext.outputLongContext 
+      ? pricingWithLongContext.outputLongContext 
+      : pricing.output
+
+    const inputCost = (promptTokens / 1000000) * inputPrice
+    const outputCost = (completionTokens / 1000000) * outputPrice
     
     return Math.round((inputCost + outputCost) * 100) // Return cost in cents
   }
@@ -222,6 +243,8 @@ export class ClaudeService {
     description: string
     inputPrice: number
     outputPrice: number
+    inputPriceLongContext?: number
+    outputPriceLongContext?: number
     recommended: boolean
     capabilities: string[]
     contextWindow: string
@@ -230,72 +253,50 @@ export class ClaudeService {
   }> {
     return [
       {
-        name: 'claude-opus-4-1-20250805',
-        description: 'Our most capable and intelligent model yet',
-        inputPrice: this.modelPricing['claude-opus-4-1-20250805'].input,
-        outputPrice: this.modelPricing['claude-opus-4-1-20250805'].output,
+        name: 'claude-opus-4-6-20260205',
+        description: 'Latest flagship model released February 5, 2026. Best for complex tasks, coding, and research.',
+        inputPrice: this.modelPricing['claude-opus-4-6-20260205'].input,
+        outputPrice: this.modelPricing['claude-opus-4-6-20260205'].output,
+        inputPriceLongContext: this.modelPricing['claude-opus-4-6-20260205'].inputLongContext,
+        outputPriceLongContext: this.modelPricing['claude-opus-4-6-20260205'].outputLongContext,
         recommended: false,
         capabilities: [
           'Highest level of intelligence and capability',
-          'Superior reasoning capabilities',
+          'Adaptive thinking - model decides when to use extended thinking',
+          'Effort parameter support (low, medium, high, max)',
+          'Context compaction (beta) - automatically summarizes old context',
           'Complex problem solving',
           'Advanced coding',
           'Vision support',
-          'Extended thinking'
+          'Agent teams support in Claude Code',
+          '128K output tokens support'
         ],
-        contextWindow: '200K tokens',
-        maxOutput: '32K tokens',
-        trainingCutoff: 'March 2025'
+        contextWindow: '1M tokens (beta)',
+        maxOutput: '128K tokens',
+        trainingCutoff: 'January 2026'
       },
       {
-        name: 'claude-opus-4-20250514',
-        description: 'Our previous flagship model',
-        inputPrice: this.modelPricing['claude-opus-4-20250514'].input,
-        outputPrice: this.modelPricing['claude-opus-4-20250514'].output,
-        recommended: false,
-        capabilities: [
-          'Very high intelligence and capability',
-          'Advanced reasoning',
-          'Complex analysis',
-          'Vision support',
-          'Extended thinking'
-        ],
-        contextWindow: '200K tokens',
-        maxOutput: '32K tokens',
-        trainingCutoff: 'March 2025'
-      },
-      {
-        name: 'claude-sonnet-4-20250514',
-        description: 'High-performance model with exceptional reasoning',
-        inputPrice: this.modelPricing['claude-sonnet-4-20250514'].input,
-        outputPrice: this.modelPricing['claude-sonnet-4-20250514'].output,
+        name: 'claude-sonnet-4-6-20260217',
+        description: 'Latest Sonnet model released February 17, 2026. Best balance of performance and cost.',
+        inputPrice: this.modelPricing['claude-sonnet-4-6-20260217'].input,
+        outputPrice: this.modelPricing['claude-sonnet-4-6-20260217'].output,
+        inputPriceLongContext: this.modelPricing['claude-sonnet-4-6-20260217'].inputLongContext,
+        outputPriceLongContext: this.modelPricing['claude-sonnet-4-6-20260217'].outputLongContext,
         recommended: true, // Recommended for most use cases
         capabilities: [
           'High intelligence and balanced performance',
+          'Adaptive thinking - model decides when to use extended thinking',
+          'Effort parameter support (low, medium, high, max)',
+          'Context compaction (beta) - automatically summarizes old context',
           'Exceptional reasoning capabilities',
           'Fast processing',
           'Vision support',
-          'Extended thinking'
-        ],
-        contextWindow: '200K tokens (1M beta available)',
-        maxOutput: '64K tokens',
-        trainingCutoff: 'March 2025'
-      },
-      {
-        name: 'claude-3-7-sonnet-20250219',
-        description: 'High-performance model with early extended thinking',
-        inputPrice: this.modelPricing['claude-3-7-sonnet-20250219'].input,
-        outputPrice: this.modelPricing['claude-3-7-sonnet-20250219'].output,
-        recommended: false,
-        capabilities: [
-          'High intelligence with toggleable extended thinking',
-          'Advanced reasoning',
-          'Vision support',
-          'Fast responses'
+          'Agent teams support in Claude Code',
+          '128K output tokens support'
         ],
         contextWindow: '200K tokens',
-        maxOutput: '64K tokens',
-        trainingCutoff: 'November 2024'
+        maxOutput: '128K tokens',
+        trainingCutoff: 'January 2026'
       },
       {
         name: 'claude-3-5-haiku-20241022',
@@ -371,10 +372,10 @@ export class ClaudeService {
       case 'fastest':
         return 'claude-3-5-haiku-20241022'
       case 'premium':
-        return 'claude-opus-4-1-20250805'
+        return 'claude-opus-4-6-20260205'
       case 'balanced':
       default:
-        return 'claude-sonnet-4-20250514'
+        return 'claude-sonnet-4-6-20260217'
     }
   }
 
@@ -390,14 +391,36 @@ export class ClaudeService {
    * Check if a model supports extended thinking
    */
   supportsExtendedThinking(model: string): boolean {
-    // Extended thinking is available on Claude 4 and Sonnet 3.7 models
+    // Extended thinking is available on Claude 4.6 models with adaptive thinking
     const extendedThinkingModels = [
-      'claude-opus-4-1-20250805',
-      'claude-opus-4-20250514',
-      'claude-sonnet-4-20250514',
-      'claude-3-7-sonnet-20250219'
+      'claude-opus-4-6-20260205',
+      'claude-sonnet-4-6-20260217'
     ]
     return extendedThinkingModels.includes(model)
+  }
+
+  /**
+   * Check if a model supports effort parameter
+   */
+  supportsEffortParameter(model: string): boolean {
+    // Effort parameter is available on Claude 4.6 models
+    const effortModels = [
+      'claude-opus-4-6-20260205',
+      'claude-sonnet-4-6-20260217'
+    ]
+    return effortModels.includes(model)
+  }
+
+  /**
+   * Check if a model supports context compaction
+   */
+  supportsContextCompaction(model: string): boolean {
+    // Context compaction is available on Claude 4.6 models (beta)
+    const compactionModels = [
+      'claude-opus-4-6-20260205',
+      'claude-sonnet-4-6-20260217'
+    ]
+    return compactionModels.includes(model)
   }
 
   /**
@@ -406,7 +429,7 @@ export class ClaudeService {
   async sendPromptWithExtendedThinking(
     business: { name: string; description: string | null; [key: string]: unknown },
     customPrompt?: string,
-    model: string = 'claude-sonnet-4-20250514'
+    model: string = 'claude-sonnet-4-6-20260217'
   ): Promise<ClaudePromptResult> {
     if (!this.supportsExtendedThinking(model)) {
       // Fallback to regular prompt for models that don't support extended thinking

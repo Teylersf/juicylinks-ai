@@ -191,6 +191,17 @@ export function Footer() {
           <div className="flex flex-col md:flex-row md:items-center md:justify-between text-sm text-gray-600 dark:text-gray-300">
             <div className="mb-4 md:mb-0">
               <p>&copy; 2025 Juicy Links. All rights reserved.</p>
+              <p className="text-xs mt-1 text-gray-500 dark:text-gray-400">
+                Made by{' '}
+                <a 
+                  href="https://www.taylorkalin.com/" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors underline"
+                >
+                  Taylor Kalin
+                </a>
+              </p>
             </div>
             <div className="flex items-center space-x-6">
               <span>Made with ❤️ for the AI generation</span>

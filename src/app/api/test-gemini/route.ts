@@ -53,13 +53,13 @@ export async function GET() {
         'cost-effective': geminiService.getRecommendedModel('cost-effective'),
         'balanced': geminiService.getRecommendedModel('balanced'),
         'premium': geminiService.getRecommendedModel('premium'),
-        'next-gen': geminiService.getRecommendedModel('next-gen')
+        'latest': geminiService.getRecommendedModel('latest')
       },
       capabilities: {
         multimodal: 'All models support audio, images, videos, and text input',
         reasoning: 'Enhanced thinking and reasoning capabilities',
         thinking: 'Adaptive thinking mode available (increases cost)',
-        nextGeneration: 'Gemini 2.0 models with next-gen features'
+        nextGeneration: 'Gemini 3.x models with latest features'
       },
       message: 'Google Gemini service is ready'
     })
@@ -107,14 +107,14 @@ export async function PUT(request: NextRequest) {
       result = await geminiService.sendPromptWithThinking(
         testBusiness,
         customPrompt,
-        model || 'gemini-2.5-flash',
+        model || 'gemini-3-flash-preview',
         thinkingBudget
       )
     } else {
       result = await geminiService.sendPrompt(
         testBusiness,
         customPrompt,
-        model || 'gemini-2.5-flash'
+        model || 'gemini-3-flash-preview'
       )
     }
     
@@ -149,7 +149,7 @@ export async function PATCH(request: NextRequest) {
     const geminiService = new GeminiService()
     
     const modelInfo = geminiService.getModelInfo()
-    const selectedModel = modelInfo.find(m => m.name === (model || 'gemini-2.5-flash'))
+    const selectedModel = modelInfo.find(m => m.name === (model || 'gemini-3-flash-preview'))
     
     if (!selectedModel) {
       return NextResponse.json({

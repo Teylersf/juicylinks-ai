@@ -12,20 +12,34 @@ export interface GeminiPromptResult {
   model?: string
 }
 
+export type ThinkingLevel = 'minimal' | 'low' | 'medium' | 'high'
+export type MediaResolution = 'low' | 'medium' | 'high' | 'ultra_high'
+
 export class GeminiService {
   private client: GoogleGenAI
   
-  // Gemini 2.5 model pricing (based on Google's official pricing)
+  // Gemini 3 model pricing (as of February 2026)
   // Reference: https://ai.google.dev/pricing
   private modelPricing = {
-    // Gemini 2.5 Pro - Enhanced thinking and reasoning, multimodal understanding, advanced coding
-    'gemini-2.5-pro': { input: 1.25, output: 5.00 },
+    // Gemini 3.1 Pro Preview - Latest Pro model released Feb 20, 2026
+    // 1M token context window, 64K output
+    // Standard: $2.00 input / $12.00 output; Long context (>200K): $4.00 input / $18.00 output
+    'gemini-3.1-pro-preview': { input: 2.00, output: 12.00, inputLongContext: 4.00, outputLongContext: 18.00 },
     
-    // Gemini 2.5 Flash - Adaptive thinking, cost efficiency
-    'gemini-2.5-flash': { input: 0.075, output: 0.30 },
+    // Gemini 3 Pro Preview - Pro model
+    // 1M token context window
+    // Standard: $2.00 input / $12.00 output; Long context: $4.00 input / $18.00 output
+    'gemini-3-pro-preview': { input: 2.00, output: 12.00, inputLongContext: 4.00, outputLongContext: 18.00 },
     
-    // Gemini 2.5 Flash-Lite - Most cost-efficient model supporting high throughput
-    'gemini-2.5-flash-lite': { input: 0.0375, output: 0.15 },
+    // Gemini 3 Flash Preview - Fast, cost-effective model
+    // 1M token context window
+    // $0.50 input / $3.00 output
+    'gemini-3-flash-preview': { input: 0.50, output: 3.00 },
+    
+    // Gemini 3 Pro Image Preview - Image generation model
+    // 65K context, 32K output
+    // $2.00 text input / $0.134 per image output
+    'gemini-3-pro-image-preview': { input: 2.00, output: 0.134 },
   }
 
   constructor() {
@@ -45,7 +59,9 @@ export class GeminiService {
   async sendPrompt(
     business: { name: string; description: string | null; [key: string]: unknown },
     customPrompt?: string,
-    model: string = 'gemini-2.5-flash'
+    model: string = 'gemini-3-flash-preview',
+    thinkingLevel?: ThinkingLevel,
+    mediaResolution?: MediaResolution
   ): Promise<GeminiPromptResult> {
     const startTime = Date.now()
 
@@ -53,28 +69,25 @@ export class GeminiService {
       // Generate the prompt
       const prompt = this.generatePrompt(business, customPrompt)
       
-      // Use the new Google GenAI SDK based on the provided documentation
-      let response
+      // Build configuration for Gemini 3 models
+      const config: Record<string, unknown> = {}
       
-      // Special handling for Gemini 2.5 Pro which supports thinking mode
-      if (model === 'gemini-2.5-pro') {
-        response = await this.client.models.generateContent({
-          model: model,
-          contents: prompt,
-          config: {
-            // Enable thinking for Pro model with reasonable budget
-            thinkingConfig: {
-              thinkingBudget: 1000 // Allow some thinking tokens for better responses
-            }
-          }
-        })
-      } else {
-        // For other models, use standard configuration without thinking
-        response = await this.client.models.generateContent({
-          model: model,
-          contents: prompt
-        })
+      // Add thinking level configuration for supported models (Gemini 3 Pro variants)
+      if (model.includes('pro') && !model.includes('image') && thinkingLevel) {
+        config.thinkingLevel = thinkingLevel
       }
+      
+      // Add media resolution for image quality control
+      if (mediaResolution) {
+        config.mediaResolution = mediaResolution
+      }
+      
+      // Use the Google GenAI SDK
+      const response = await this.client.models.generateContent({
+        model: model,
+        contents: prompt,
+        config: Object.keys(config).length > 0 ? config : undefined
+      })
 
       const responseTime = Date.now() - startTime
 
@@ -197,8 +210,17 @@ export class GeminiService {
     const pricing = this.modelPricing[model as keyof typeof this.modelPricing]
     if (!pricing) return 0
 
-    const inputCost = (promptTokens / 1000000) * pricing.input
-    const outputCost = (completionTokens / 1000000) * pricing.output
+    // Check if this is a long context scenario (>200K tokens for pro models)
+    const isLongContext = promptTokens > 200000
+    const inputPrice = isLongContext && 'inputLongContext' in pricing 
+      ? pricing.inputLongContext 
+      : pricing.input
+    const outputPrice = isLongContext && 'outputLongContext' in pricing 
+      ? pricing.outputLongContext 
+      : pricing.output
+
+    const inputCost = (promptTokens / 1000000) * inputPrice
+    const outputCost = (completionTokens / 1000000) * outputPrice
     
     return Math.round((inputCost + outputCost) * 100) // Return cost in cents
   }
@@ -224,47 +246,67 @@ export class GeminiService {
   }> {
     return [
       {
-        name: 'gemini-2.5-pro',
-        description: 'Enhanced thinking and reasoning, multimodal understanding, advanced coding',
-        inputPrice: this.modelPricing['gemini-2.5-pro'].input,
-        outputPrice: this.modelPricing['gemini-2.5-pro'].output,
+        name: 'gemini-3.1-pro-preview',
+        description: 'Latest Pro model released Feb 20, 2026 with enhanced reasoning and 1M context window',
+        inputPrice: this.modelPricing['gemini-3.1-pro-preview'].input,
+        outputPrice: this.modelPricing['gemini-3.1-pro-preview'].output,
         recommended: false,
         capabilities: [
           'Enhanced thinking and reasoning',
+          '1M token context window',
+          '64K output tokens',
+          'Thinking level control (minimal, low, medium, high)',
           'Multimodal understanding',
           'Advanced coding',
+          'Audio, images, videos, text, and PDF input'
+        ],
+        optimizedFor: 'Complex reasoning and multimodal tasks requiring latest capabilities'
+      },
+      {
+        name: 'gemini-3-pro-preview',
+        description: 'Pro model with 1M context window and advanced reasoning',
+        inputPrice: this.modelPricing['gemini-3-pro-preview'].input,
+        outputPrice: this.modelPricing['gemini-3-pro-preview'].output,
+        recommended: false,
+        capabilities: [
+          'Advanced reasoning',
+          '1M token context window',
+          'Thinking level control',
+          'Multimodal understanding',
           'Complex problem solving',
           'Audio, images, videos, text, and PDF input'
         ],
         optimizedFor: 'Complex reasoning and multimodal tasks'
       },
       {
-        name: 'gemini-2.5-flash',
-        description: 'Adaptive thinking, cost efficiency - balanced performance',
-        inputPrice: this.modelPricing['gemini-2.5-flash'].input,
-        outputPrice: this.modelPricing['gemini-2.5-flash'].output,
+        name: 'gemini-3-flash-preview',
+        description: 'Fast, cost-effective model with 1M context window',
+        inputPrice: this.modelPricing['gemini-3-flash-preview'].input,
+        outputPrice: this.modelPricing['gemini-3-flash-preview'].output,
         recommended: true, // Recommended for most use cases
         capabilities: [
-          'Adaptive thinking',
-          'Cost efficient',
           'Fast responses',
+          '1M token context window',
+          'Cost efficient',
+          'Media resolution control',
           'Audio, images, videos, and text input'
         ],
         optimizedFor: 'Balanced performance and cost efficiency'
       },
       {
-        name: 'gemini-2.5-flash-lite',
-        description: 'Most cost-efficient model supporting high throughput',
-        inputPrice: this.modelPricing['gemini-2.5-flash-lite'].input,
-        outputPrice: this.modelPricing['gemini-2.5-flash-lite'].output,
+        name: 'gemini-3-pro-image-preview',
+        description: 'Image generation model with 65K context and 32K output',
+        inputPrice: this.modelPricing['gemini-3-pro-image-preview'].input,
+        outputPrice: this.modelPricing['gemini-3-pro-image-preview'].output,
         recommended: false,
         capabilities: [
-          'High throughput',
-          'Most cost-efficient',
-          'Fast processing',
-          'Text, image, video, audio input'
+          'Image generation',
+          '65K token context window',
+          '32K output tokens',
+          'Text-to-image',
+          'Vision-based tasks'
         ],
-        optimizedFor: 'Cost efficiency and high throughput'
+        optimizedFor: 'Image generation and vision tasks'
       }
     ]
   }
@@ -282,7 +324,7 @@ export class GeminiService {
       const result = await this.sendPrompt(
         testBusiness,
         'Just say "Hello, this is a test from Google Gemini" and nothing else.',
-        'gemini-2.5-flash-lite' // Use cheapest model for testing
+        'gemini-3-flash-preview' // Use cheapest model for testing
       )
       
       return {
@@ -301,17 +343,19 @@ export class GeminiService {
   /**
    * Get recommended model based on use case
    */
-  getRecommendedModel(useCase: 'cost-effective' | 'balanced' | 'premium' | 'next-gen' = 'balanced'): string {
+  getRecommendedModel(useCase: 'cost-effective' | 'balanced' | 'premium' | 'latest' | 'image' = 'balanced'): string {
     switch (useCase) {
       case 'cost-effective':
-        return 'gemini-2.5-flash-lite'
+        return 'gemini-3-flash-preview'
       case 'premium':
-        return 'gemini-2.5-pro'
-      case 'next-gen':
-        return 'gemini-2.0-flash'
+        return 'gemini-3-pro-preview'
+      case 'latest':
+        return 'gemini-3.1-pro-preview'
+      case 'image':
+        return 'gemini-3-pro-image-preview'
       case 'balanced':
       default:
-        return 'gemini-2.5-flash'
+        return 'gemini-3-flash-preview'
     }
   }
 
@@ -319,33 +363,48 @@ export class GeminiService {
    * Check if a model supports multimodal input
    */
   supportsMultimodal(model: string): boolean {
-    // All current Gemini models support multimodal input
+    // All Gemini 3 models support multimodal input
     return this.getAvailableModels().includes(model)
   }
 
   /**
+   * Check if a model supports image generation
+   */
+  supportsImageGeneration(model: string): boolean {
+    return model === 'gemini-3-pro-image-preview'
+  }
+
+  /**
+   * Check if a model supports thinking level control
+   */
+  supportsThinkingLevel(model: string): boolean {
+    return model.includes('pro') && !model.includes('image')
+  }
+
+  /**
    * Enable thinking mode for enhanced reasoning (increases cost and response time)
+   * Supports thinking levels: minimal, low, medium, high (default)
    */
   async sendPromptWithThinking(
     business: { name: string; description: string | null; [key: string]: unknown },
     customPrompt?: string,
-    model: string = 'gemini-2.5-flash',
-    thinkingBudget: number = 1000
+    model: string = 'gemini-3-flash-preview',
+    thinkingLevel: ThinkingLevel = 'high'
   ): Promise<GeminiPromptResult> {
     const startTime = Date.now()
 
     try {
       const prompt = this.generatePrompt(business, customPrompt)
       
+      // Build configuration with thinking level
+      const config: Record<string, unknown> = {
+        thinkingLevel: thinkingLevel
+      }
+      
       const response = await this.client.models.generateContent({
         model: model,
         contents: prompt,
-        config: {
-          // Enable thinking for enhanced reasoning
-          thinkingConfig: {
-            thinkingBudget: thinkingBudget
-          }
-        }
+        config
       })
 
       const responseTime = Date.now() - startTime
@@ -364,7 +423,7 @@ export class GeminiService {
         tokenCount: totalTokens,
         responseTime,
         cost,
-        model: `${model} (with thinking)`
+        model: `${model} (thinking: ${thinkingLevel})`
       }
 
     } catch (error) {
@@ -374,8 +433,21 @@ export class GeminiService {
         error: error instanceof Error ? error.message : 'Unknown error occurred',
         prompt: this.generatePrompt(business, customPrompt), // Include prompt even on error
         responseTime,
-        model: `${model} (with thinking)`
+        model: `${model} (thinking: ${thinkingLevel})`
       }
     }
+  }
+
+  /**
+   * Send a prompt with media resolution control for image quality
+   * Supports: low, medium, high, ultra_high
+   */
+  async sendPromptWithMediaResolution(
+    business: { name: string; description: string | null; [key: string]: unknown },
+    customPrompt?: string,
+    model: string = 'gemini-3-flash-preview',
+    mediaResolution: MediaResolution = 'high'
+  ): Promise<GeminiPromptResult> {
+    return this.sendPrompt(business, customPrompt, model, undefined, mediaResolution)
   }
 }
