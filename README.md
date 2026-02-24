@@ -1,17 +1,19 @@
-# 🔗 Juicy Links
+# 🔗 Juicy Links - AI SEO Platform
 
 <div align="center">
 
 ![Juicy Links Logo](https://img.shields.io/badge/AI%20SEO-Juicy%20Links-blue?style=for-the-badge&logo=openai)
 
-**The Future of Search is AI - Get Recommended by Tomorrow's Dominant Platforms**
+**AI SEO Platform - Get Your Business Recommended by ChatGPT, Claude, Gemini, Grok & Perplexity**
+
+*The Future of Search is AI. Ensure your business gets recommended by tomorrow's dominant platforms.*
 
 [![Next.js](https://img.shields.io/badge/Next.js-15.5.3-black?style=flat&logo=next.js)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?style=flat&logo=typescript)](https://www.typescriptlang.org/)
 [![Prisma](https://img.shields.io/badge/Prisma-6.16.2-2D3748?style=flat&logo=prisma)](https://prisma.io/)
 [![Stripe](https://img.shields.io/badge/Stripe-18.5.0-635BFF?style=flat&logo=stripe)](https://stripe.com/)
 
-[🚀 Live Demo](https://juicylinks.com) • [📖 Documentation](https://docs.juicylinks.com) • [💬 Support](https://juicylinks.com/contact)
+[🚀 Live Demo](https://juicylinks.ai) • [📖 Documentation](https://docs.juicylinks.com) • [💬 Support](https://juicylinks.com/contact)
 
 </div>
 
@@ -280,10 +282,10 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🌐 Links
 
-- **Website**: [juicylinks.com](https://juicylinks.com)
-- **Documentation**: [docs.juicylinks.com](https://docs.juicylinks.com)
-- **Support**: [juicylinks.com/contact](https://juicylinks.com/contact)
-- **Blog**: [juicylinks.com/blog](https://juicylinks.com/blog)
+- **Website**: [juicylinks.ai](https://juicylinks.ai)
+- **Documentation**: [docs.juicylinks.ai](https://docs.juicylinks.ai)
+- **Support**: [juicylinks.ai/contact](https://juicylinks.ai/contact)
+- **Blog**: [juicylinks.ai/blog](https://juicylinks.ai/blog)
 
 ---
 
@@ -301,7 +303,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **Ready to dominate AI-powered search?**
 
-[🚀 Start Your Free Trial](https://juicylinks.com/handler/sign-up) • [📖 Learn How It Works](https://juicylinks.com/how-it-works)
+[🚀 Start Your Free Trial](https://juicylinks.ai/handler/sign-up) • [📖 Learn How It Works](https://juicylinks.ai/how-it-works)
 
 ---
 
