@@ -22,8 +22,8 @@ export const LLM_MODELS: LLMProviderModels = {
     { name: 'gpt-5-nano', description: 'High throughput', recommended: false }
   ],
   CLAUDE: [
-    { name: 'claude-opus-4-6-20260205', description: 'Latest flagship with 1M context', recommended: true },
-    { name: 'claude-sonnet-4-6-20260217', description: 'Best balance performance/cost', recommended: true }
+    { name: 'claude-opus-4-6', description: 'Latest flagship with 1M context', recommended: true },
+    { name: 'claude-sonnet-4-6', description: 'Best balance performance/cost', recommended: true }
   ],
   GEMINI: [
     { name: 'gemini-3.1-pro-preview', description: 'Latest with enhanced reasoning', recommended: true },
