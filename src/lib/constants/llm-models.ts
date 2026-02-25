@@ -26,9 +26,9 @@ export const LLM_MODELS: LLMProviderModels = {
     { name: 'claude-sonnet-4-6', description: 'Best balance performance/cost', recommended: true }
   ],
   GEMINI: [
-    { name: 'gemini-3.1-pro-preview', description: 'Latest with enhanced reasoning', recommended: true },
-    { name: 'gemini-3-pro-preview', description: 'Standard Pro', recommended: true },
-    { name: 'gemini-3-flash-preview', description: 'Fast and cost-effective', recommended: true }
+    { name: 'gemini-2.5-pro', description: 'Most advanced thinking model (1M context)', recommended: true },
+    { name: 'gemini-2.5-flash', description: 'Fast and efficient with thinking', recommended: true },
+    { name: 'gemini-2.5-flash-lite', description: 'Lightweight cost-effective version', recommended: false }
   ],
   GROK: [
     { name: 'grok-4', description: 'Most intelligent xAI reasoning model', recommended: true },
