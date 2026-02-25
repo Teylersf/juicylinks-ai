@@ -108,13 +108,13 @@ export async function PUT(request: NextRequest) {
       result = await claudeService.sendPromptWithExtendedThinking(
         testBusiness,
         customPrompt,
-        model || 'claude-sonnet-4-20250514'
+        model || 'claude-sonnet-4-6'
       )
     } else {
       result = await claudeService.sendPrompt(
         testBusiness,
         customPrompt,
-        model || 'claude-sonnet-4-20250514'
+        model || 'claude-sonnet-4-6'
       )
     }
     
@@ -149,7 +149,7 @@ export async function PATCH(request: NextRequest) {
     const claudeService = new ClaudeService()
     
     const modelInfo = claudeService.getModelInfo()
-    const selectedModel = modelInfo.find(m => m.name === (model || 'claude-sonnet-4-20250514'))
+    const selectedModel = modelInfo.find(m => m.name === (model || 'claude-sonnet-4-6'))
     
     if (!selectedModel) {
       return NextResponse.json({

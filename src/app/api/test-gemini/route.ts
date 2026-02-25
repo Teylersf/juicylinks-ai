@@ -107,14 +107,14 @@ export async function PUT(request: NextRequest) {
       result = await geminiService.sendPromptWithThinking(
         testBusiness,
         customPrompt,
-        model || 'gemini-3-flash-preview',
+        model || 'gemini-2.5-flash',
         thinkingBudget
       )
     } else {
       result = await geminiService.sendPrompt(
         testBusiness,
         customPrompt,
-        model || 'gemini-3-flash-preview'
+        model || 'gemini-2.5-flash'
       )
     }
     
@@ -149,7 +149,7 @@ export async function PATCH(request: NextRequest) {
     const geminiService = new GeminiService()
     
     const modelInfo = geminiService.getModelInfo()
-    const selectedModel = modelInfo.find(m => m.name === (model || 'gemini-3-flash-preview'))
+    const selectedModel = modelInfo.find(m => m.name === (model || 'gemini-2.5-flash'))
     
     if (!selectedModel) {
       return NextResponse.json({

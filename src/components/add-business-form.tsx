@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Building2, Globe, Users, Lightbulb, Target, Mic, Save, ArrowLeft, CheckCircle } from 'lucide-react'
+import { Building2, Globe, Users, Lightbulb, Target, Mic, Save, ArrowLeft, CheckCircle, Sparkles, Loader2 } from 'lucide-react'
 
 const businessSchema = z.object({
   name: z.string().min(1, 'Business name is required').max(100, 'Name too long'),
@@ -36,14 +36,77 @@ export function AddBusinessForm() {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
+  
+  // URL scraping state
+  const [scrapeUrl, setScrapeUrl] = useState('')
+  const [isScraping, setIsScraping] = useState(false)
+  const [scrapeError, setScrapeError] = useState<string | null>(null)
 
   const {
     register,
     handleSubmit,
+    setValue,
+    watch,
     formState: { errors }
   } = useForm<BusinessFormData>({
     resolver: zodResolver(businessSchema),
   })
+
+  // Watch website field to sync with scrapeUrl
+  // Watch form values for potential future use
+  // const formValues = watch()
+
+  const handleScrape = async () => {
+    if (!scrapeUrl.trim()) {
+      setScrapeError('Please enter a website URL')
+      return
+    }
+
+    setIsScraping(true)
+    setScrapeError(null)
+
+    try {
+      const response = await fetch('/api/scrape-business', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: scrapeUrl })
+      })
+
+      const result = await response.json()
+
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to analyze website')
+      }
+
+      const data = result.data
+
+      // Autofill form fields
+      if (data.name) setValue('name', data.name)
+      if (data.description) setValue('description', data.description)
+      if (data.website) setValue('website', data.website)
+      if (data.industry && industries.includes(data.industry)) {
+        setValue('industry', data.industry)
+      } else if (data.industry) {
+        setValue('industry', 'Other')
+      }
+      if (data.targetAudience) setValue('targetAudience', data.targetAudience)
+      if (data.keyServices && data.keyServices.length > 0) {
+        setValue('keyServices', data.keyServices.join(', '))
+      }
+      if (data.uniqueSellingPoints && data.uniqueSellingPoints.length > 0) {
+        setValue('uniqueSellingPoints', data.uniqueSellingPoints.join(', '))
+      }
+      if (data.brandVoice) setValue('brandVoice', data.brandVoice)
+      if (data.competitorKeywords && data.competitorKeywords.length > 0) {
+        setValue('competitorKeywords', data.competitorKeywords.join(', '))
+      }
+
+    } catch (error) {
+      setScrapeError(error instanceof Error ? error.message : 'Failed to analyze website')
+    } finally {
+      setIsScraping(false)
+    }
+  }
 
   const onSubmit = async (data: BusinessFormData) => {
     setIsSubmitting(true)
@@ -89,6 +152,57 @@ export function AddBusinessForm() {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+      {/* URL Autofill Section */}
+      <div className="space-y-4">
+        <div className="flex items-center space-x-2 text-lg font-semibold text-gray-900 dark:text-white">
+          <Sparkles className="h-5 w-5 text-purple-600" />
+          <span>Auto-fill from Website</span>
+        </div>
+        
+        <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-4">
+          <p className="text-sm text-purple-700 dark:text-purple-300 mb-3">
+            Enter your business website URL and we&apos;ll use AI to automatically fill in your business details.
+          </p>
+          
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <Globe className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <input
+                type="url"
+                value={scrapeUrl}
+                onChange={(e) => setScrapeUrl(e.target.value)}
+                placeholder="https://example.com"
+                className="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 dark:bg-gray-700 dark:text-white"
+              />
+            </div>
+            <button
+              type="button"
+              onClick={handleScrape}
+              disabled={isScraping}
+              className="flex items-center px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {isScraping ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Analyzing...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  Auto-fill
+                </>
+              )}
+            </button>
+          </div>
+          
+          {scrapeError && (
+            <p className="mt-2 text-sm text-red-600 dark:text-red-400">{scrapeError}</p>
+          )}
+        </div>
+      </div>
+
+      <div className="border-t border-gray-200 dark:border-gray-700 pt-6" />
+
       {/* Basic Information */}
       <div className="space-y-6">
         <div className="flex items-center space-x-2 text-lg font-semibold text-gray-900 dark:text-white">
