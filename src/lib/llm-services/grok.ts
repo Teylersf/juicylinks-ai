@@ -64,14 +64,17 @@ export class GrokService {
   private baseUrl = 'https://api.x.ai/v1'
   
   // Grok model pricing (per million tokens) - Updated February 2026
+  // Based on xAI API available models: https://x.ai/api
   private modelPricing = {
     'grok-4': { input: 3.00, output: 15.00 },
-    'grok-4-heavy': { input: 3.00, output: 15.00 },
     'grok-3': { input: 3.00, output: 15.00 },
+    'grok-3-fast': { input: 3.00, output: 15.00 },
     'grok-3-mini': { input: 0.30, output: 0.50 },
+    'grok-3-mini-fast': { input: 0.30, output: 0.50 },
   }
 
   // Detailed model information - Updated February 2026
+  // Based on xAI API available models: https://x.ai/api
   private modelInfo: Record<string, GrokModelInfo> = {
     'grok-4': {
       name: 'grok-4',
@@ -83,22 +86,8 @@ export class GrokService {
       nativeToolUse: true,
       realTimeSearch: true,
       reasoningModel: true,
-      description: "xAI's most intelligent model released July 2025. Supports multimodal (text, image, video), native tool use, and real-time search.",
-      knowledgeCutoff: 'June 2025',
-      unsupportedParameters: ['presencePenalty', 'frequencyPenalty', 'stop']
-    },
-    'grok-4-heavy': {
-      name: 'grok-4-heavy',
-      inputPrice: 3.00,
-      outputPrice: 15.00,
-      contextWindow: 256000, // 256K for API
-      maxOutputTokens: 128000,
-      multimodal: true,
-      nativeToolUse: true,
-      realTimeSearch: true,
-      reasoningModel: true,
-      description: 'Parallel test-time compute version of Grok 4 for maximum performance.',
-      knowledgeCutoff: 'June 2025',
+      description: "xAI's most intelligent model. Reasoning model with multimodal (text, image, video), native tool use, and real-time search capabilities.",
+      knowledgeCutoff: 'November 2024',
       unsupportedParameters: ['presencePenalty', 'frequencyPenalty', 'stop']
     },
     'grok-3': {
@@ -111,8 +100,22 @@ export class GrokService {
       nativeToolUse: true,
       realTimeSearch: true,
       reasoningModel: true,
-      description: 'Previous generation model. Still capable with good performance.',
-      knowledgeCutoff: 'June 2025',
+      description: 'Previous generation flagship model. Still capable with good performance.',
+      knowledgeCutoff: 'November 2024',
+      unsupportedParameters: ['presencePenalty', 'frequencyPenalty', 'stop']
+    },
+    'grok-3-fast': {
+      name: 'grok-3-fast',
+      inputPrice: 3.00,
+      outputPrice: 15.00,
+      contextWindow: 256000,
+      maxOutputTokens: 128000,
+      multimodal: true,
+      nativeToolUse: true,
+      realTimeSearch: true,
+      reasoningModel: true,
+      description: 'Faster version of Grok 3 with similar capabilities.',
+      knowledgeCutoff: 'November 2024',
       unsupportedParameters: ['presencePenalty', 'frequencyPenalty', 'stop']
     },
     'grok-3-mini': {
@@ -126,7 +129,21 @@ export class GrokService {
       realTimeSearch: false,
       reasoningModel: false,
       description: 'Lightweight version for cost-effective tasks.',
-      knowledgeCutoff: 'June 2025',
+      knowledgeCutoff: 'November 2024',
+      unsupportedParameters: []
+    },
+    'grok-3-mini-fast': {
+      name: 'grok-3-mini-fast',
+      inputPrice: 0.30,
+      outputPrice: 0.50,
+      contextWindow: 256000,
+      maxOutputTokens: 128000,
+      multimodal: false,
+      nativeToolUse: false,
+      realTimeSearch: false,
+      reasoningModel: false,
+      description: 'Fast, lightweight version for high-throughput tasks.',
+      knowledgeCutoff: 'November 2024',
       unsupportedParameters: []
     }
   }

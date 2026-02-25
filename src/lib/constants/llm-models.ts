@@ -31,9 +31,11 @@ export const LLM_MODELS: LLMProviderModels = {
     { name: 'gemini-3-flash-preview', description: 'Fast and cost-effective', recommended: true }
   ],
   GROK: [
-    { name: 'grok-4', description: 'Most intelligent xAI model (July 2025)', recommended: true },
-    { name: 'grok-4-heavy', description: 'Maximum performance', recommended: true },
-    { name: 'grok-3-mini', description: 'Lightweight', recommended: false }
+    { name: 'grok-4', description: 'Most intelligent xAI reasoning model', recommended: true },
+    { name: 'grok-3', description: 'Previous generation flagship', recommended: true },
+    { name: 'grok-3-fast', description: 'Fast version of Grok 3', recommended: false },
+    { name: 'grok-3-mini', description: 'Lightweight cost-effective', recommended: false },
+    { name: 'grok-3-mini-fast', description: 'Fast lightweight for high throughput', recommended: false }
   ],
   PERPLEXITY: [
     { name: 'sonar-deep-research', description: 'Deep multi-step research', recommended: true },
