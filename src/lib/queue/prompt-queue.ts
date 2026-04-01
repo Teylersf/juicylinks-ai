@@ -83,12 +83,15 @@ export class PromptQueueManager {
    */
   async addPromptsToQueue(triggerType: 'manual' | 'automatic' | 'credit' = 'automatic'): Promise<void> {
     try {
+      const now = new Date()
+      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+
       // Get all active users with active businesses
       const users = await this.prisma.user.findMany({
         where: {
           OR: [
             { isActive: true }, // Paid users
-            { 
+            {
               AND: [
                 { isTrialActive: true },
                 { trialEndsAt: { gt: new Date() } }
@@ -103,18 +106,33 @@ export class PromptQueueManager {
         }
       })
 
+      // Query PromptLog to find which (business, provider, model) combos already
+      // succeeded today. This makes the queue idempotent — safe to call multiple
+      // times (e.g. after a Vercel timeout, the hourly cron retries only what's left).
+      const alreadyProcessedToday = await this.prisma.promptLog.findMany({
+        where: {
+          triggerType: 'automatic',
+          createdAt: { gte: todayStart },
+          wasSuccessful: true
+        },
+        select: { businessId: true, llmProvider: true, model: true },
+        distinct: ['businessId', 'llmProvider', 'model']
+      })
+      const processedKeys = new Set(
+        alreadyProcessedToday.map(p => `${p.businessId}-${p.llmProvider}-${p.model}`)
+      )
+
       const queueItems: Omit<QueueItem, 'position' | 'totalInQueue'>[] = []
-      const processedUsers = new Set<string>() // Track users we've already processed
 
       for (const user of users) {
-        // Check if user should get prompts today based on their plan (check once per user)
+        // Check if user should get prompts today based on their plan
         const userShouldGetPrompts = await this.shouldSendPromptsForUser(user)
-        
-        if (userShouldGetPrompts && !processedUsers.has(user.id)) {
-          // Update user's tracking based on trigger type - once per user
-          await this.updateUserQueueTracking(user, triggerType)
-          processedUsers.add(user.id)
-        }
+
+        // NOTE: We intentionally do NOT call updateUserQueueTracking here.
+        // Tracking is updated in processQueue AFTER items are actually processed,
+        // so that if the function times out mid-run the hourly cron can retry.
+
+        let userItemCount = 0
 
         for (const business of user.businesses) {
           if (userShouldGetPrompts) {
@@ -122,9 +140,15 @@ export class PromptQueueManager {
             for (const providerName of business.targetLLMs) {
               const provider = providerName as keyof typeof LLM_MODELS
               const models = LLM_MODELS[provider]
-              
+
               if (models) {
                 for (const model of models) {
+                  // Skip combos that already succeeded today (idempotent retry)
+                  const key = `${business.id}-${provider}-${model.name}`
+                  if (processedKeys.has(key)) {
+                    continue
+                  }
+
                   queueItems.push({
                     id: `${business.id}-${provider.toLowerCase()}-${model.name}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
                     userId: user.id,
@@ -138,16 +162,24 @@ export class PromptQueueManager {
                     createdAt: new Date(),
                     status: 'pending'
                   })
+                  userItemCount++
                 }
               }
             }
           }
         }
+
+        // If this user is eligible but has 0 new items, all their businesses
+        // already finished today. Update tracking so the hourly cron skips them.
+        if (userShouldGetPrompts && userItemCount === 0 && user.businesses.length > 0) {
+          await this.updateUserQueueTracking(user, triggerType)
+          console.log(`All businesses already processed for user ${user.id}, marked as done`)
+        }
       }
 
       // Sort by priority (higher priority first)
       queueItems.sort((a, b) => b.priority - a.priority)
-      
+
       // Add position information
       this.currentQueue = queueItems.map((item, index) => ({
         ...item,
@@ -155,7 +187,7 @@ export class PromptQueueManager {
         totalInQueue: queueItems.length
       }))
 
-      console.log(`Added ${queueItems.length} items to prompt queue`)
+      console.log(`Added ${queueItems.length} items to prompt queue (${processedKeys.size} already done today)`)
     } catch (error) {
       console.error('Error adding prompts to queue:', error)
     }
@@ -310,6 +342,17 @@ export class PromptQueueManager {
 
         // Rate limiting: 1 second delay between requests
         await this.delay(1000)
+      }
+
+      // All items processed — now mark users as "ran today" so hourly cron
+      // skips them. This only runs if we reach here (no timeout/crash).
+      const processedUserIds = [...new Set(processedItems.map(item => item.userId))]
+      for (const userId of processedUserIds) {
+        const userItem = processedItems.find(item => item.userId === userId)
+        if (userItem) {
+          await this.updateUserQueueTracking(userItem.user, triggerType)
+          console.log(`Updated tracking for user ${userId} after successful processing`)
+        }
       }
 
       // Mark as completed
